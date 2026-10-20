@@ -1,0 +1,46 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: vakeel-vision-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: vakeel_vision
+      POSTGRES_USER: vakeel_user
+      POSTGRES_PASSWORD: vakeel_dev_password
+
+    ports:
+      - "5432:5432"
+    
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    
+    healthcheck:
+      test: ["CMD-SHELL","pg_isready -U vakeel_user -d vakeel_vision"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: vakeel-vision-api
+    restart: unless-stopped
+
+    environment:
+      DATABASE_URL: postgresql+psycopg://vakeel_user:vakeel_dev_password@postgres:5432/vakeel_vision
+      PYTHONPATH: /app
+
+    volumes:
+      - ./server:/app
+
+    ports:
+      - "8000:8000"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

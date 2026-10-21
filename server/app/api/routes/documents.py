@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlmodel import Session, select
 
@@ -12,8 +11,10 @@ from app.services.document_storage import (UPLOAD_DIR,save_upload_file,delete_up
 from app.services.document_content import save_extracted_content
 from app.services.document_processing import extract_stored_pdf
 from app.services.text_preprocessing import normalize_document_text
+from app.services.document_processing import prepare_stored_pdf_chunks
 
 from app.models.documet_content import DocumentContent
+from app.models.document_chunk import DocumentChunk
 from app.schemas.documet_content import DocumentContentRead
 
 router = APIRouter(prefix="/documents", tags=["Documents"])
@@ -160,7 +161,8 @@ async def upload_pdf(
         
         # 2. Extract text before creating database records.
         
-        extract_text, page_count =extract_stored_pdf(storage_key=storage_key)
+        extract_text, page_count = extract_stored_pdf(storage_key=storage_key)
+        chunks = prepare_stored_pdf_chunks(storage_key=storage_key)
         
         # Reject PDFs that contain no extractable text for now.
         
@@ -194,6 +196,22 @@ async def upload_pdf(
             extracted_text=extract_text,
             page_count=page_count
         )
+        
+        chunk_records = [
+            DocumentChunk(
+                document_id=document.id,
+                chunk_index=index,
+                text=chunk.page_content,
+                page_number=(
+                    chunk.metadata["page"] + 1
+                    if isinstance(chunk.metadata.get("page"),int)
+                    else None
+                ),
+                start_index=chunk.metadata.get("start_index")
+            ) for index,chunk in enumerate(chunks)
+        ]
+        
+        session.add_all(chunk_records)
         
         session.commit()
         session.refresh(document)

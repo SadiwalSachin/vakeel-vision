@@ -1,7 +1,7 @@
 import os
 from sqlmodel import SQLModel,create_engine
 # Import all models so SQLModel registers every table.
-from app.models import (Document,DocumentContent,DocumentAnalysis,AnalysisFinding)
+from app.models import (Document,DocumentContent,DocumentAnalysis,AnalysisFinding,DocumentChunk)
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",

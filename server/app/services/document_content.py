@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from sqlmodel import Session
 from app.models.documet_content import DocumentContent
 
+# This service is responsible for persisting extracted document content and its metadata to the database.
 def save_extracted_content(
     session:Session,
     document_id:int,

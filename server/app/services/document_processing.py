@@ -1,6 +1,5 @@
 from app.services.pdf_extraction import extract_pdf_text
 from app.services.text_preprocessing import normalize_document_text
-from app.services.text_chunking import chunk_document_text
 
 from langchain_core.documents import Document
 
@@ -17,17 +16,6 @@ def extract_stored_pdf(storage_key:str) -> tuple[str,int]:
     normalized_text = normalize_document_text(extract_text)
     
     return normalized_text, page_count
-
-def prepare_document_chunks(storage_key:str, chunk_size:int = 4000, chunk_overlap:int = 400) -> list[str]:
-    """Extract text from a PDF and split it into overlapping chunks."""
-    
-    document_text, _ = extract_stored_pdf(storage_key=storage_key)
-    
-    return chunk_document_text(
-        text=document_text,
-        chunk_size=chunk_size,
-        chunk_overlap=chunk_overlap
-    )
     
     
 def prepare_stored_pdf_chunks(storage_key: str) -> list[Document]:

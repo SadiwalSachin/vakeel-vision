@@ -6,6 +6,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from app.services.text_preprocessing import normalize_document_text
 
+# This service is responsible for loading a PDF, normalizing its text, and splitting it into chunks while preserving page metadata.
 def load_and_chunk_pdf(
     file_path:Path,
     chunk_size:int = 4000,
@@ -25,7 +26,7 @@ def load_and_chunk_pdf(
     
     normalized_pages = [
         Document(
-            page_content=normalize_document_text(page.page_content),
+            page_content=page.page_content,
             metadata=page.metadata
         ) for page in pages
         

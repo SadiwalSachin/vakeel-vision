@@ -1,10 +1,9 @@
-
 from pathlib import Path
 
 from pypdf import PdfReader
 from pypdf.errors import PdfReadError
 
-
+# This service is responsible for extracting text from PDF files, either as a whole or page by page, while handling errors and edge cases.
 def extract_pdf_pages(file_path: Path) -> list[str]:
     """Extract selectable text separately from each PDF page."""
     try:

@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:16
+    image: pgvector/pgvector:pg16
     container_name: vakeel-vision-postgres
     restart: unless-stopped
 
@@ -27,6 +27,8 @@ services:
       dockerfile: Dockerfile
     container_name: vakeel-vision-api
     restart: unless-stopped
+    env_file:
+      - .env
 
     environment:
       DATABASE_URL: postgresql+psycopg://vakeel_user:vakeel_dev_password@postgres:5432/vakeel_vision

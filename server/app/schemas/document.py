@@ -41,4 +41,8 @@ class DocumentTextCreate(SQLModel):
         description="The legal document text to store and analyze.",
     )
     
+class AskDocumentRequest(SQLModel):
+    question:str = Field(min_length=1,max_length=5000)
+    top_k:int = Field(default=5,ge=1,le=10)
+    
     

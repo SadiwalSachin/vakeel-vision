@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { Scale, Menu, X } from "lucide-react";
+import { Scale, Menu, X, UserRound, LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { APP_NAME, APP_TAGLINE } from "@/constants/app.constants";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/providers/auth-provider";
 
 export function LandingNavbar() {
+  const { status } = useAuth();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -23,7 +25,7 @@ export function LandingNavbar() {
         "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
         scrolled
           ? "bg-background/80 backdrop-blur-lg border-b border-border shadow-sm"
-          : "bg-transparent"
+          : "bg-transparent",
       )}
     >
       <nav className="max-w-7xl mx-auto flex items-center justify-between px-6 lg:px-8 h-16">
@@ -66,12 +68,26 @@ export function LandingNavbar() {
 
         {/* Auth buttons — desktop */}
         <div className="hidden md:flex items-center gap-3">
-          <Button variant="ghost" size="sm">
-            <Link href="/login">Log In</Link>
-          </Button>
-          <Button size="sm">
-            <Link href="/register">Sign Up Free</Link>
-          </Button>
+          {status === "loading" ? (
+            <LoaderCircle className="h-5 w-5 animate-spin text-muted-foreground" />
+          ) : status === "authenticated" ? (
+            <Button variant="outline" size="sm">
+              <Link href="/dashboard">
+                <UserRound className="mr-2 h-4 w-4" />
+                My Profile
+              </Link>
+            </Button>
+          ) : (
+            <>
+              <Button variant="ghost" size="sm">
+                <Link href="/login">Log In</Link>
+              </Button>
+
+              <Button size="sm">
+                <Link href="/register">Sign Up Free</Link>
+              </Button>
+            </>
+          )}
         </div>
 
         {/* Mobile menu button */}
@@ -113,12 +129,32 @@ export function LandingNavbar() {
             Security
           </a>
           <div className="flex gap-3 pt-3 border-t border-border">
-            <Button variant="outline" className="flex-1">
-              <Link href="/login">Log In</Link>
-            </Button>
-            <Button className="flex-1">
-              <Link href="/register">Sign Up Free</Link>
-            </Button>
+            {status === "loading" ? (
+              <div className="flex flex-1 justify-center py-2">
+                <LoaderCircle className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : status === "authenticated" ? (
+              <Button className="flex-1" variant="outline">
+                <Link href="/dashboard" onClick={() => setMobileOpen(false)}>
+                  <UserRound className="mr-2 h-4 w-4" />
+                  My Profile
+                </Link>
+              </Button>
+            ) : (
+              <>
+                <Button variant="outline" className="flex-1">
+                  <Link href="/login" onClick={() => setMobileOpen(false)}>
+                    Log In
+                  </Link>
+                </Button>
+
+                <Button className="flex-1" >
+                  <Link href="/register" onClick={() => setMobileOpen(false)}>
+                    Sign Up Free
+                  </Link>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       )}

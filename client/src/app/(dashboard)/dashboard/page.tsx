@@ -90,12 +90,6 @@ export default function DashboardPage() {
       {/* Page heading */}
       <section className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
         <div>
-          <div className="mb-3 flex items-center gap-2 text-sm text-muted-foreground">
-            <span>Workspace</span>
-            <span>/</span>
-            <span className="text-foreground">Overview</span>
-          </div>
-
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
             Your legal workspace
           </h1>

@@ -1,3 +1,4 @@
+"use client";
 
 import Link from "next/link";
 import {
@@ -10,23 +11,45 @@ import {
   Bell,
   ChevronDown,
   Plus,
+  UserRound,
+  Upload,
 } from "lucide-react";
 
-import {
-  APP_NAME,
-  APP_TAGLINE,
-} from "@/constants/app.constants";
+import { APP_NAME, APP_TAGLINE } from "@/constants/app.constants";
+
+import { cn } from "@/lib/utils";
+import { usePathname } from "next/navigation";
 
 const navigation = [
   {
-    label: "Overview",
-    href: "/dashboard",
-    icon: LayoutDashboard,
+    section: "Workspace",
+    items: [
+      {
+        label: "Overview",
+        href: "/dashboard",
+        icon: LayoutDashboard,
+      },
+      {
+        label: "My Documents",
+        href: "/documents",
+        icon: Files,
+      },
+      {
+        label: "Upload Document",
+        href: "/documents/upload",
+        icon: Upload,
+      },
+    ],
   },
   {
-    label: "My Documents",
-    href: "/documents",
-    icon: Files,
+    section: "Account",
+    items: [
+      {
+        label: "My Profile",
+        href: "/profile",
+        icon: UserRound,
+      },
+    ],
   },
 ];
 
@@ -35,11 +58,13 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <div className="flex min-h-screen">
+    <div className="fixed inset-0 flex flex-col overflow-hidden bg-background text-foreground">
+      <div className="flex min-h-0 flex-1">
         {/* Sidebar */}
-        <aside className="hidden w-64 shrink-0 flex-col border-r border-border bg-card md:flex">
+        <aside className="hidden h-full w-64 shrink-0 flex-col overflow-hidden border-r border-border bg-card md:flex">
           {/* Brand */}
           <Link
             href="/"
@@ -60,50 +85,63 @@ export default function DashboardLayout({
           </Link>
 
           {/* Navigation */}
-          <div className="flex-1 px-4 py-7">
-            <p className="mb-3 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-              Workspace
-            </p>
+          <nav className="flex-1 space-y-7 px-4 py-6">
+            {navigation.map((group) => (
+              <div key={group.section}>
+                <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  {group.section}
+                </p>
 
-            <nav className="space-y-1">
-              {navigation.map((item) => {
-                const Icon = item.icon;
-                const isActive = item.href === "/dashboard";
+                <div className="space-y-1">
+                  {group.items.map((item) => {
+                    const Icon = item.icon;
 
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                      isActive
-                        ? "bg-primary/10 text-primary"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                    }`}
-                  >
-                    <Icon className="h-[18px] w-[18px]" />
-                    {item.label}
-                    {isActive && (
-                      <span className="ml-auto h-1.5 w-1.5 rounded-full bg-primary" />
-                    )}
-                  </Link>
-                );
-              })}
-            </nav>
+                    // Match the exact page or its nested routes.
 
-            <p className="mb-3 mt-9 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-              Preferences
-            </p>
+                    const isActive =
+                      item.href === "/documents"
+                        ? pathname === "/documents" ||
+                          (pathname.startsWith("/documents/") &&
+                            pathname !== "/documents/upload" &&
+                            !pathname.startsWith("/documents/upload/"))
+                        : item.href === "/dashboard"
+                          ? pathname === "/dashboard"
+                          : pathname === item.href ||
+                            pathname.startsWith(`${item.href}/`);
 
-            <nav className="space-y-1">
-              <Link
-                href="/settings"
-                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              >
-                <Settings className="h-[18px] w-[18px]" />
-                Settings
-              </Link>
-            </nav>
-          </div>
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        aria-current={isActive ? "page" : undefined}
+                        className={cn(
+                          "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
+                          isActive
+                            ? "bg-primary/10 text-primary"
+                            : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                        )}
+                      >
+                        <Icon
+                          className={cn(
+                            "h-5 w-5 shrink-0 transition-colors",
+                            isActive
+                              ? "text-primary"
+                              : "text-muted-foreground group-hover:text-foreground",
+                          )}
+                        />
+
+                        <span>{item.label}</span>
+
+                        {isActive && (
+                          <span className="ml-auto h-5 w-1 rounded-full bg-primary" />
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </nav>
 
           {/* Help card */}
           <div className="m-4 rounded-xl border border-border bg-muted/40 p-4">
@@ -116,9 +154,7 @@ export default function DashboardLayout({
               Learn how to organize and analyze your legal documents.
             </p>
 
-            <p className="mt-3 text-xs font-medium text-primary">
-              Help center
-            </p>
+            <p className="mt-3 text-xs font-medium text-primary">Help center</p>
           </div>
 
           <div className="border-t border-border px-6 py-4">
@@ -129,16 +165,16 @@ export default function DashboardLayout({
         </aside>
 
         {/* Main application area */}
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           {/* Top navigation */}
-          <header className="sticky top-0 z-20 flex h-[76px] items-center justify-between gap-4 border-b border-border bg-background/95 px-4 backdrop-blur sm:px-6 lg:px-9">
+          <header className="z-20 flex h-[76px] shrink-0 items-center justify-between gap-4 border-b border-border bg-background/95 px-4 backdrop-blur sm:px-6 lg:px-9">
             <div className="min-w-0">
               <p className="text-sm font-medium">Workspace</p>
               <p className="mt-0.5 text-xs text-muted-foreground">
                 Your legal document workspace
               </p>
             </div>
-
+            {/* 
             <div className="flex items-center gap-2 sm:gap-4">
               <div className="hidden h-10 w-64 items-center gap-2 rounded-lg border border-border bg-card px-3 lg:flex">
                 <Search className="h-4 w-4 text-muted-foreground" />
@@ -156,42 +192,14 @@ export default function DashboardLayout({
                 className="relative flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               >
                 <Bell className="h-[18px] w-[18px]" />
-                <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-primary" />
               </button>
-
-              <div className="hidden h-8 w-px bg-border sm:block" />
-
-              <button
-                type="button"
-                className="flex items-center gap-2 rounded-lg p-1.5 transition-colors hover:bg-muted"
-              >
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
-                  VV
-                </div>
-
-                <div className="hidden text-left sm:block">
-                  <p className="text-sm font-medium">My Account</p>
-                  <p className="text-xs text-muted-foreground">
-                    Personal workspace
-                  </p>
-                </div>
-
-                <ChevronDown className="hidden h-4 w-4 text-muted-foreground sm:block" />
-              </button>
-            </div>
+            </div> */}
           </header>
 
           {/* Page content */}
-          <main className="flex-1 px-4 py-7 sm:px-6 sm:py-9 lg:px-9">
+          <main className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-4 py-7 sm:px-6 sm:py-9 lg:px-9">
             {children}
           </main>
-
-          <footer className="border-t border-border px-6 py-4 lg:px-9">
-            <p className="text-xs text-muted-foreground">
-              © 2026 {APP_NAME}. AI-generated insights are informational
-              and do not constitute legal advice.
-            </p>
-          </footer>
         </div>
       </div>
     </div>

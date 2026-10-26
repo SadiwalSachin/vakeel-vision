@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/providers/theme-provider";
 import { QueryProvider } from "@/providers/query-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { APP_NAME, APP_DESCRIPTION, APP_TAGLINE } from "@/constants/app.constants";
+import { AuthProvider } from "@/providers/auth-provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -52,17 +53,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="h-screen flex flex-col">
         <ThemeProvider>
           <QueryProvider>
             <TooltipProvider>
+              <AuthProvider>
               {children}
               <Toaster  
                 position="top-right"
                 richColors
                 closeButton
                 duration={4000}
-              />
+                />
+              </AuthProvider>
             </TooltipProvider>
           </QueryProvider>
         </ThemeProvider>

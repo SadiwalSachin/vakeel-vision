@@ -1,19 +1,23 @@
-# Dependencies are installed inside Docker.
-node_modules
 
-# Do not copy local build artifacts.
-.next
-out
+# Dependencies installed inside the Docker image
+node_modules/
 
-# Never copy local environment files into the image.
+# Next.js build output
+.next/
+out/
+
+# Local environment files and secrets
 .env
 .env.*
 !.env.example
 
-# Exclude Git metadata and local editor files.
-.git
-.vscode
-.idea
+# Git and development tooling
+.git/
+.vscode/
 
-# Exclude debug logs.
+# Logs and test coverage
 npm-debug.log*
+coverage/
+
+# Operating-system files
+.DS_Store

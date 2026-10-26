@@ -51,3 +51,5 @@ export interface VerifyEmailRequest {
 export interface ResendVerificationRequest {
   email: string;
 }
+
+export type AuthStatus = "authenticated" | "unauthenticated" | "loading";

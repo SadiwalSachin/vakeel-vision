@@ -249,9 +249,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          FEATURES SECTION
-      ═══════════════════════════════════════════════════════════════════ */}
       <section id="features" className="py-20 lg:py-28 bg-muted/30">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="max-w-2xl mx-auto text-center mb-16">
@@ -332,9 +329,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          HOW IT WORKS SECTION
-      ═══════════════════════════════════════════════════════════════════ */}
       <section id="how-it-works" className="py-20 lg:py-28">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="max-w-2xl mx-auto text-center mb-16">
@@ -394,9 +388,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          SECURITY SECTION
-      ═══════════════════════════════════════════════════════════════════ */}
+
       <section id="security" className="py-20 lg:py-28 bg-muted/30">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
@@ -502,9 +494,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          CTA SECTION
-      ═══════════════════════════════════════════════════════════════════ */}
       <section className="py-20 lg:py-28">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="relative rounded-2xl bg-primary overflow-hidden px-8 py-16 lg:px-16 lg:py-20 text-center">

@@ -28,7 +28,7 @@ services:
     container_name: vakeel-vision-api
     restart: unless-stopped
     env_file:
-      - ./server/.env
+      - ./server/.env.local
 
     environment:
       DATABASE_URL: postgresql+psycopg://vakeel_user:vakeel_dev_password@postgres:5432/vakeel_vision

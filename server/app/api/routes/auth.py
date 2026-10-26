@@ -215,7 +215,7 @@ def login_user(
         key="refresh_token",
         value=raw_refresh_token,
         httponly=True,
-        secure=False,  # Local HTTP development only; use True in production HTTPS.
+        secure=True,  # Local HTTP development only; use True in production HTTPS.
         samesite="lax",
         max_age=7 * 24 * 60 * 60,
         path="/auth",

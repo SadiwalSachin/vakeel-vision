@@ -1,0 +1,41 @@
+
+services:
+  api:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+
+    restart: unless-stopped
+
+    env_file:
+      - ./server/.env.production
+
+    environment:
+      COOKIE_SECURE: "true"
+
+    networks:
+      - vakeel-network
+
+    ports:
+      - "127.0.0.1:8000:8000"
+
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: https://api-vakeel.boardify.space
+
+    restart: unless-stopped
+
+    networks:
+      - vakeel-network
+
+    ports:
+      - "127.0.0.1:3000:3000"
+
+
+networks:
+  vakeel-network:
+    driver: bridge

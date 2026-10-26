@@ -28,7 +28,7 @@ services:
     container_name: vakeel-vision-api
     restart: unless-stopped
     env_file:
-      - .env
+      - ./server/.env
 
     environment:
       DATABASE_URL: postgresql+psycopg://vakeel_user:vakeel_dev_password@postgres:5432/vakeel_vision
@@ -43,6 +43,29 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
+    
+    container_name: vakeel-vision-client
+    restart: unless-stopped
+
+    depends_on:
+      - api
+
+    networks:
+      - vakeel-network
+
+    ports:
+      - "3000:3000"
+
+networks:
+  vakeel-network:
+    driver: bridge
 
 volumes:
   postgres_data:

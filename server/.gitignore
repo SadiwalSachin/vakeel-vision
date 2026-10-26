@@ -1,0 +1,101 @@
+
+# Python virtual environments
+.venv/
+venv/
+
+# Python generated files
+__pycache__/
+*.py[cod]
+
+# Pytest cache and coverage reports
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Local database files
+*.db
+*.sqlite3
+
+# Logs
+*.log
+
+# IDE and operating system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Node.js dependencies and build output (for our future frontend)
+node_modules/
+.next/
+out/
+
+# Local uploads and generated artifacts
+uploads/
+artifacts/
+```
+
+## 2. Understand why we're doing this
+
+- **`.venv/`** — your installed Python environment is reproducible from dependency definitions; it doesn't belong in Git.
+- **`.env`** — may contain passwords, API keys, and database URLs. These must never be committed.
+- **`.pytest_cache/`** — generated test data that doesn't need version control.
+- **`node_modules/` and `.next/`** — generated frontend dependencies and build artifacts.
+- **`uploads/`** — prevents accidentally committing local documents that may contain sensitive legal information.
+
+The rule `!.env.example` allows a safe example configuration file to be tracked even though `.env` files are ignored. We'll create that example when we introduce configuration.
+
+**Important:** `.gitignore` doesn't protect secrets that were already committed. If a secret is exposed, revoke or rotate it.
+
+## 3. Verify the file
+
+From your project root, run:
+
+```powershell
+# Check whether Git is installed
+git --version
+
+# Check whether the .gitignore file exists
+Get-Content .gitignore
+```
+
+If you already initialized Git, verify that your virtual environment is ignored:
+
+```powershell
+# Run from the project root.
+# This should report that the path is ignored.
+git check-ignore backend/.venv/
+```
+
+If Git hasn't been initialized yet, that's fine. We'll set up the repository in a later step.
+
+## Why this approach?
+
+We could ignore files globally through Git configuration, but a project-level `.gitignore` is better because its rules travel with the repository and apply to every contributor.
+
+---
+
+## Your checkpoint
+
+{@body const [status,setStatus] = DIL.useState("done")}
+{@body const [error,setError] = DIL.useState("")}
+<box border radius="xl" padding={3} gap={3}>
+  <radio-group value={status} onChange={setStatus} direction="col">
+    <radio value="done">DONE — `.gitignore` created and verified</radio>
+    <radio value="error">ERROR — I encountered an issue</radio>
+  </radio-group>
+  {#if status === "error"}
+    <textarea value={error} onChange={setError} placeholder="Paste the command output or error here..." rows={3}/>
+  {/if}
+  <button block onClick={() => GenUI.issueNewTurn(status === "done" ? "DONE — Step 6 completed. Proceed to Step 7, one actionable step at a time." : "ERROR — Step 6 failed. Help me debug it before proceeding.\nDetails:\n"+(error || "No error details provided"))}>{status === "done" ? "Confirm and continue" : "Help me fix the error"}</button>
+</box>
+
+
+# Uploaded legal documents — never commit user files
+backend/uploads/*
+!backend/uploads/.gitkeep

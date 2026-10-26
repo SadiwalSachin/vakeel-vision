@@ -4,6 +4,11 @@ from app.models.document_analysis import DocumentAnalysis
 from app.models.analysis_finding import AnalysisFinding
 from app.models.document_chunk import DocumentChunk
 from app.models.chunk_embedding import ChunkEmbedding
+from app.models.user import User
+from app.models.auth_identity import AuthIdentity
+from app.models.email_verification_token import EmailVerificationToken
+from app.models.refresh_session import RefreshSession
+from app.models.password_reset_token import PasswordResetToken
 
 __all__ = [
     "Document",
@@ -11,5 +16,10 @@ __all__ = [
     "DocumentAnalysis",
     "AnalysisFinding",
     "DocumentChunk",
-    "ChunkEmbedding"
+    "ChunkEmbedding",
+    "User",
+    "AuthIdentity",
+    "EmailVerificationToken",
+    "RefreshSession",
+    "PasswordResetToken"
 ]

@@ -1,0 +1,19 @@
+# Dependencies are installed inside Docker.
+node_modules
+
+# Do not copy local build artifacts.
+.next
+out
+
+# Never copy local environment files into the image.
+.env
+.env.*
+!.env.example
+
+# Exclude Git metadata and local editor files.
+.git
+.vscode
+.idea
+
+# Exclude debug logs.
+npm-debug.log*

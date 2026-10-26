@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlmodel import Session, select
 
 from app.db.dependencies import get_session
-from app.models import Document
+from app.models import Document, User
 from app.models.chunk_embedding import ChunkEmbedding
 from app.schemas.document import DocumentCreate, DocumentRead, DocumentUpdate, DocumentTextCreate, AskDocumentRequest
 
@@ -22,6 +22,8 @@ from app.models.documet_content import DocumentContent
 from app.models.document_chunk import DocumentChunk
 from app.schemas.documet_content import DocumentContentRead
 
+from app.api.dependencies.auth import get_current_user
+
 router = APIRouter(prefix="/documents", tags=["Documents"])
 
 # Create a new document
@@ -33,11 +35,13 @@ router = APIRouter(prefix="/documents", tags=["Documents"])
 def create_document(
     document_data: DocumentCreate,
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ):
     document = Document(
         filename=document_data.filename,
         source_type=document_data.source_type,
         status="uploaded",
+        user_id=current_user.id
     )
 
     session.add(document)
@@ -51,8 +55,9 @@ def create_document(
 @router.get("/", response_model=list[DocumentRead])
 def list_documents(
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ):
-    statement = select(Document).order_by(Document.created_at.desc())
+    statement = select(Document).where(Document.user_id == current_user.id).order_by(Document.created_at.desc())
     return session.exec(statement).all()
 
 
@@ -60,9 +65,14 @@ def list_documents(
 def get_document(
     document_id: int,
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ):
-    document = session.get(Document, document_id)
-
+    statement = select(Document).where(
+        Document.id == document_id,
+        Document.user_id == current_user.id,
+    )
+    document = session.exec(statement).first()
+    
     if document is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -77,8 +87,13 @@ def update_document(
     document_id: int,
     document_data: DocumentUpdate,
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ):
-    document = session.get(Document, document_id)
+    statement = select(Document).where(
+        Document.id == document_id,
+        Document.user_id == current_user.id
+    )
+    document = session.exec(statement=statement).first()
 
     if document is None:
         raise HTTPException(
@@ -97,6 +112,7 @@ def update_document(
     return document
 
 
+
 @router.delete(
     "/{document_id}",
     status_code=status.HTTP_204_NO_CONTENT,
@@ -104,52 +120,51 @@ def update_document(
 def delete_document(
     document_id: int,
     session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ):
-    document = session.get(Document, document_id)
+    statement = select(Document).where(
+        Document.id == document_id,
+        Document.user_id == current_user.id,
+    )
+    document = session.exec(statement).first()
 
     if document is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Document not found",
         )
-        
+
     storage_key = document.storage_key
-    file_path = UPLOAD_DIR / storage_key if storage_key else None
-        
+
     try:
-        # 1. Find extracted content linked to this document.
-        statement = select(DocumentContent).where(
+        # Delete extracted content before deleting the parent document.
+        content_statement = select(DocumentContent).where(
             DocumentContent.document_id == document_id
         )
-        
-        # 2. Delete the child record first to satisfy the foreign key.
-        content = session.exec(statement=statement).first()
-        
+        content = session.exec(content_statement).first()
+
         if content is not None:
             session.delete(content)
-            
             session.flush()
-        
-        # 3. Delete the parent document.   
+
         session.delete(document)
-        
-        # 4. Persist both deletions together.
         session.commit()
-        
-        if storage_key is not None:
+
+        # Delete the stored file only after the database transaction succeeds.
+        if storage_key:
             delete_uploaded_file(storage_key=storage_key)
-    
+
     except Exception:
         session.rollback()
         raise
-        
-        
+  
     
 
 @router.post("/upload",response_model=DocumentRead,status_code=status.HTTP_201_CREATED)
 async def upload_pdf(
-    file:UploadFile = File(...),
-    session:Session=Depends(get_session)
+    file: UploadFile = File(...),
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ):
     # Check the original filename before saving.
     if not file.filename or Path(file.filename).suffix.lower() != ".pdf":
@@ -189,7 +204,8 @@ async def upload_pdf(
             content_type=file.content_type,
             file_size_bytes=file_size,
             storage_key=storage_key,
-            status="uploaded"
+            status="uploaded",
+            user_id=current_user.id
         )
         
         session.add(document)
@@ -268,41 +284,48 @@ async def upload_pdf(
         raise
 
 
-@router.get("/{document_id}/content",response_model=DocumentContentRead)
+@router.get(
+    "/{document_id}/content",
+    response_model=DocumentContentRead,
+)
 def get_document_conent(
-    document_id:int,
-    session:Session=Depends(get_session)
+    document_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ):
-    # Confirm that the parent document exists.
-    
-    document = session.get(Document,document_id)
-    
+    # Find the document only if it belongs to the current user.
+    document_statement = select(Document).where(
+        Document.id == document_id,
+        Document.user_id == current_user.id,
+    )
+    document = session.exec(document_statement).first()
+
     if document is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Document not found", 
+            detail="Document not found",
         )
-    
-    # Retrieve the extracted text associated with this document.
-    statement = select(DocumentContent).where(
+
+    # Retrieve the extracted content for the owned document.
+    content_statement = select(DocumentContent).where(
         DocumentContent.document_id == document_id
     )
-    
-    content = session.exec(statement=statement).first()
-    
+    content = session.exec(content_statement).first()
+
     if content is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Extracted content not found for this document",
         )
-    
+
     return content
 
 
 @router.post("/text",response_model=DocumentRead,status_code=status.HTTP_201_CREATED)
 def create_text_document(
-    document_data:DocumentTextCreate,
-    session:Session=Depends(get_session)
+    document_data: DocumentTextCreate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ):
     file_name = document_data.filename.strip()
     extracted_text = normalize_document_text(document_data.text)
@@ -320,7 +343,8 @@ def create_text_document(
         source_type="text",
         content_type="text/plain",
         file_size_bytes=len(extracted_text.encode("utf-8")),
-        status="processed"
+        status="processed",
+        user_id=current_user.id
     )
     
     try:
@@ -346,13 +370,18 @@ def create_text_document(
     
 @router.post("/{document_id}/ask")
 def ask_document(
-    document_id:int,
-    payload:AskDocumentRequest,
-    session:Session = Depends(get_session)
+    document_id: int,
+    payload: AskDocumentRequest,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ):
     # 1. Verify the document exist.
     
-    document = session.get(Document,document_id)
+    document_statement = select(Document).where(
+        Document.id == document_id,
+        Document.user_id == current_user.id,
+    )
+    document = session.exec(document_statement).first()
     
     if document is None:
         raise HTTPException(
@@ -414,19 +443,24 @@ def ask_document(
     
 @router.post("/{document_id}/embeddings")
 def get_embeddings(
-    document_id:int,
-    payload:AskDocumentRequest,
-    session:Session=Depends(get_session)
+    document_id: int,
+    payload: AskDocumentRequest,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
 ):
 # 1. Verify the document exist.
     
-    document = session.get(Document,document_id)
-    
+    document_statement = select(Document).where(
+    Document.id == document_id,
+    Document.user_id == current_user.id,
+    )
+    document = session.exec(document_statement).first()
+
     if document is None:
         raise HTTPException(
-            status_code=404,
-            detail="Document not found.",
-        )
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail="Document not found.",
+    )
         
     # 2. Emebed the user's question
     

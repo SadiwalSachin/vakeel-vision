@@ -6,6 +6,8 @@ class Document(SQLModel,table=True):
     # Here we will get the specifc id of the document which we will upload
     id:int | None = Field(default=None,primary_key=True)
     
+    user_id:int = Field(foreign_key="user.id",index=True,nullable=False)
+    
     # This is the filename we will analyze
     filename:str = Field(index=True, max_length=255)
     

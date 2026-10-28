@@ -1,0 +1,44 @@
+version: 3.2
+chai_type: masala chai
+temperature: hot
+servings: 2
+brewing_time: 5
+
+# chai ki yml file masala chai ye it has inline comment not multiline comment
+
+chai_recipe:
+  base: black_tea
+  milk: whole_milk
+
+
+chai_recipe_two:
+    base: black_tea
+    milk: whole_milk
+
+chai_name: Masla Chai
+description: "Chai with cardmom and ginger"
+tagline: 'The best chai in the town and history'
+
+brewing_instruction: |
+  boli water
+  add tea leaves
+  add milk 
+
+brwing_instruction: >
+  boil water
+  add tea leaves
+  add milk
+
+
+cups_per_day: 3
+cups_per_night: 5
+cups_per_week: 90
+
+is_hot: true
+add_sugar: yes
+add_salt: no
+
+sweetner: null
+alternative: ~
+
+morning_brew: 2026-01-15 08:30:01

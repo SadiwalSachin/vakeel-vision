@@ -3,7 +3,7 @@ import { queryClient } from "@/lib/query-client";
 import { API_ROUTES } from "@/lib/api-routes";
 
 // 1. Base URL Configuration
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
 /**
  * Main Axios instance configured with credentials enabled 

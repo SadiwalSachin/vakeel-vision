@@ -26,6 +26,7 @@ jobs:
           EC2_KNOWN_HOSTS: ${{ secrets.EC2_KNOWN_HOSTS }}
         run: |
           install -m 700 -d ~/.ssh
+
           printf '%s\n' "$EC2_SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
 
@@ -43,9 +44,39 @@ jobs:
             "$EC2_USER@$EC2_HOST" \
             'set -eu
             cd /mnt/data/projects/vakeel-vision
+
+            echo "Fetching latest production branch..."
             git fetch origin feature/production-deployment
             git checkout feature/production-deployment
             git reset --hard origin/feature/production-deployment
+
+            echo "Building and starting application..."
             sudo docker compose -f docker-compose.prod.yml up -d --build
+
+            echo "Waiting for API health check..."
+
+            for attempt in $(seq 1 12); do
+              if curl --fail --silent --show-error http://localhost:8000/health; then
+                echo
+                echo "API health check passed."
+                break
+              fi
+
+              if [ "$attempt" -eq 12 ]; then
+                echo "ERROR: API failed to become healthy within 60 seconds."
+
+                sudo docker compose -f docker-compose.prod.yml ps
+                sudo docker compose -f docker-compose.prod.yml logs --tail=100 api
+
+                exit 1
+              fi
+
+              echo "API not ready yet (attempt $attempt/12). Retrying in 5 seconds..."
+              sleep 5
+            done
+
+            echo "Final container status:"
             sudo docker compose -f docker-compose.prod.yml ps
-            curl --fail --silent --show-error http://localhost:8000/health'
+
+            echo "Deployment completed successfully."
+            '

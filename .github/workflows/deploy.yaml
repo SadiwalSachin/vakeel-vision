@@ -42,10 +42,10 @@ jobs:
             -o StrictHostKeyChecking=yes \
             "$EC2_USER@$EC2_HOST" \
             'set -eu
-             cd /mnt/data/projects/vakeel-vision
-             git fetch origin feature/production-deployment
-             git checkout feature/production-deployment
-             git pull --ff-only origin feature/production-deployment
-             sudo docker compose -f docker-compose.prod.yml up -d --build
-             sudo docker compose -f docker-compose.prod.yml ps
-             curl --fail --silent --show-error http://localhost:8000/health'
+            cd /mnt/data/projects/vakeel-vision
+            git fetch origin feature/production-deployment
+            git checkout feature/production-deployment
+            git reset --hard origin/feature/production-deployment
+            sudo docker compose -f docker-compose.prod.yml up -d --build
+            sudo docker compose -f docker-compose.prod.yml ps
+            curl --fail --silent --show-error http://localhost:8000/health'

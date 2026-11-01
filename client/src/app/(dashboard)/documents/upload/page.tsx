@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -17,29 +16,82 @@ import {
   Upload,
   X,
 } from "lucide-react";
+import { toast } from "sonner";
+import { useUploadPDFFile } from "@/hooks/use-documents";
+import { MAX_FILE_SIZE_BYTES } from "@/constants/app.constants";
 
 export default function UploadDocumentPage() {
+  const { mutate, isPending } = useUploadPDFFile();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [isDragging, setIsDragging] = useState(false);
 
-  const handleFiles = (fileList: FileList | null) => {
-    if (!fileList) return;
+  const [selectedFile, setSelectedFile] = useState<File | undefined>(undefined);
 
-    // UI preview only. No files are uploaded to a server.
-    const pdfFiles = Array.from(fileList).filter(
-      (file) => file.type === "application/pdf"
-    );
+  function uploadFile() {
+    if (selectedFile) {
+      mutate(selectedFile,{
+        onSuccess:(data) => {
+          toast.success("Document uploaded successfully")
+        },
+        onError:(error) => {
+          toast.error("Failed to upload document")
+        }
+      });
+      console.log("is Success");
+    }
+  }
 
-    setSelectedFiles((previous) => {
-      const combined = [...previous, ...pdfFiles];
-      return combined.filter(
-        (file, index, array) =>
-          array.findIndex(
-            (item) => item.name === file.name && item.size === file.size
-          ) === index
-      );
-    });
+  const validatePdfFile = async (file: File): Promise<string | null> => {
+    if (file === null) {
+      return "Select file to upload";
+    }
+
+    if (file.size == 0) {
+      return "The selected file is empty.";
+    }
+
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      return "File size must not exceed 20 MB.";
+    }
+
+    if (!file.name.toLowerCase().endsWith(".pdf")) {
+      return "Only PDF Files are supported";
+    }
+
+    if (file.type !== "application/pdf") {
+      return "The selected file does not appear to be a valid PDF.";
+    }
+
+    const header = await file.slice(0, 5).arrayBuffer();
+    const signature = new TextDecoder().decode(header);
+
+    if (signature !== "%PDF-") {
+      return "The selected file does not appear to be a valid PDF.";
+    }
+
+    return null;
+  };
+
+  const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.currentTarget?.files?.[0];
+
+    if (!file) {
+      toast.error("No file selected");
+      return;
+    }
+
+    setSelectedFile(undefined);
+
+    const validationError = await validatePdfFile(file);
+
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
+
+    setSelectedFile(file);
+    event.currentTarget.value = "";
   };
 
   const formatSize = (bytes: number) => {
@@ -61,9 +113,9 @@ export default function UploadDocumentPage() {
           Upload documents
         </h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-          Add your legal documents to Vakeel Vision. Once processed, you will
-          be able to explore clauses, identify potential risks, and ask
-          questions about their contents.
+          Add your legal documents to Vakeel Vision. Once processed, you will be
+          able to explore clauses, identify potential risks, and ask questions
+          about their contents.
         </p>
       </section>
 
@@ -85,7 +137,7 @@ export default function UploadDocumentPage() {
             </div>
 
             {/* Dropzone */}
-            <div
+            {/* <div
               onDragOver={(event) => {
                 event.preventDefault();
                 setIsDragging(true);
@@ -136,39 +188,36 @@ export default function UploadDocumentPage() {
               <p className="mt-4 text-xs text-muted-foreground">
                 PDF files only · Maximum size: 20 MB per file
               </p>
-            </div>
+            </div> */}
 
-            <input
+            {/* <input
               ref={fileInputRef}
               type="file"
               accept=".pdf,application/pdf"
               multiple
               className="hidden"
               onChange={(event) => {
-                handleFiles(event.target.files);
-                event.target.value = "";
+                handleFiles(event.currentTarget?.f iles);
+                event.currentTarget.value = "";
               }}
+            /> */}
+            <p>File</p>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,application/pdf"
+              multiple={false}
+              className=""
+              onChange={handleFileChange}
             />
 
             {/* Selected files */}
-            {selectedFiles.length > 0 && (
+            {selectedFile && (
               <div className="mt-6 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-medium">
-                    Selected files ({selectedFiles.length})
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedFiles([])}
-                    className="text-xs text-muted-foreground hover:text-foreground"
-                  >
-                    Clear all
-                  </button>
-                </div>
-
-                {selectedFiles.map((file, index) => (
+                {selectedFile && (
                   <div
-                    key={`${file.name}-${file.size}-${index}`}
+                    key={`${selectedFile.name}-${selectedFile.size}`}
                     className="flex items-center gap-3 rounded-xl border border-border p-3"
                   >
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -177,10 +226,10 @@ export default function UploadDocumentPage() {
 
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium">
-                        {file.name}
+                        {selectedFile.name}
                       </p>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        {formatSize(file.size)} · PDF
+                        {formatSize(selectedFile.size)} · PDF
                       </p>
                     </div>
 
@@ -188,37 +237,37 @@ export default function UploadDocumentPage() {
 
                     <button
                       type="button"
-                      aria-label={`Remove ${file.name}`}
-                      onClick={() =>
-                        setSelectedFiles((files) =>
-                          files.filter((_, i) => i !== index)
-                        )
-                      }
+                      aria-label={`Remove ${selectedFile.name}`}
+                      onClick={() => {
+                        fileInputRef.current!.value = "";
+                        setSelectedFile(undefined)
+                      }}
                       className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
                     >
                       <X className="h-4 w-4" />
                     </button>
                   </div>
-                ))}
+                )}
               </div>
             )}
 
             {/* Non-functional action */}
             <div className="mt-6 flex flex-col-reverse gap-3 border-t border-border pt-5 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-xs leading-5 text-muted-foreground">
-                {selectedFiles.length === 0
-                  ? "Select files to preview your upload."
-                  : `${selectedFiles.length} file(s) selected. Upload is not enabled yet.`}
+                {!selectedFile
+                  ? "Select a file to preview your upload."
+                  : `${selectedFile.name} selected. Upload is not enabled yet.`}
               </p>
 
               <button
                 type="button"
-                disabled
+                disabled={isPending}
+                onClick={uploadFile}
                 title="Upload functionality will be added later"
-                className="inline-flex h-11 cursor-not-allowed items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-medium text-primary-foreground opacity-50"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-medium text-primary-foreground"
               >
                 <Upload className="h-4 w-4" />
-                Upload documents
+                {isPending ? "Uploading...." : "Upload"}
                 <ArrowRight className="h-4 w-4" />
               </button>
             </div>

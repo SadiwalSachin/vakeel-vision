@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -19,63 +18,8 @@ import {
   Sparkles,
   Plus,
 } from "lucide-react";
-
-// Replace this dummy data with your documents hook later.
-type DocumentStatus = "ready" | "processing" | "failed";
-
-type DocumentItem = {
-  id: string;
-  name: string;
-  type: string;
-  size: string;
-  uploadedAt: string;
-  status: DocumentStatus;
-  pages: number;
-  summary: string;
-};
-
-const DUMMY_DOCUMENTS: DocumentItem[] = [
-  {
-    id: "doc-001",
-    name: "Rental Agreement.pdf",
-    type: "PDF",
-    size: "2.4 MB",
-    uploadedAt: "Oct 25, 2026",
-    status: "ready",
-    pages: 18,
-    summary: "Residential lease agreement with rent, deposit, and termination clauses.",
-  },
-  {
-    id: "doc-002",
-    name: "Employment Contract.pdf",
-    type: "PDF",
-    size: "1.8 MB",
-    uploadedAt: "Oct 24, 2026",
-    status: "ready",
-    pages: 12,
-    summary: "Employment terms, compensation, confidentiality, and non-compete provisions.",
-  },
-  {
-    id: "doc-003",
-    name: "Service Agreement.pdf",
-    type: "PDF",
-    size: "3.1 MB",
-    uploadedAt: "Oct 23, 2026",
-    status: "processing",
-    pages: 32,
-    summary: "Document analysis is underway. Your workspace will be ready shortly.",
-  },
-  {
-    id: "doc-004",
-    name: "Non-Disclosure Agreement.pdf",
-    type: "PDF",
-    size: "940 KB",
-    uploadedAt: "Oct 21, 2026",
-    status: "failed",
-    pages: 8,
-    summary: "The document could not be processed. Try processing it again.",
-  },
-];
+import { useDocumentsList } from "@/hooks/use-documents";
+import { DocumentStatus,Document } from "@/types/document.types";
 
 const STATUS_CONFIG = {
   ready: {
@@ -96,17 +40,22 @@ const STATUS_CONFIG = {
 };
 
 export default function DocumentsPage() {
-  const [documents] = useState(DUMMY_DOCUMENTS);
+
+  const {data:documents = []} = useDocumentsList()
+
+  console.log("documetns",documents)
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | DocumentStatus>("all");
 
   const filteredDocuments = useMemo(() => {
     const query = search.trim().toLowerCase();
 
-    return documents.filter((document) => {
+    if(!documents || documents?.length === 0) return []
+
+    return documents.filter((document:Document) => {
       const matchesSearch =
-        document.name.toLowerCase().includes(query) ||
-        document.summary.toLowerCase().includes(query);
+        document?.filename?.toLowerCase().includes(query) ||
+        document?.summary?.toLowerCase().includes(query);
 
       const matchesFilter =
         filter === "all" || document.status === filter;
@@ -116,7 +65,7 @@ export default function DocumentsPage() {
   }, [documents, search, filter]);
 
   const readyCount = documents.filter(
-    (document) => document.status === "ready"
+    (document:Document) => document.status === "analyzed"
   ).length;
 
   return (
@@ -161,7 +110,7 @@ export default function DocumentsPage() {
           icon={<Clock3 className="h-5 w-5" />}
           label="Being processed"
           value={documents
-            .filter((document) => document.status === "processing")
+            .filter((document:Document) => document.status === "uploaded")
             .length.toString()}
           description="Analysis in progress"
         />
@@ -217,9 +166,6 @@ export default function DocumentsPage() {
           {filteredDocuments.length > 0 ? (
             <div className="divide-y divide-border">
               {filteredDocuments.map((document) => {
-                const status = STATUS_CONFIG[document.status];
-                const StatusIcon = status.icon;
-
                 return (
                   <article
                     key={document.id}
@@ -233,30 +179,28 @@ export default function DocumentsPage() {
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <h3 className="truncate font-medium">
-                            {document.name}
+                            {document.filename || "Untitled document"}
                           </h3>
                           <span
-                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium ${status.className}`}
+                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium `}
                           >
-                            <StatusIcon
+                            {/* <StatusIcon
                               className={`h-3.5 w-3.5 ${
-                                document.status === "processing"
+                                document.status === "uploaded"
                                   ? "animate-spin"
                                   : ""
                               }`}
                             />
-                            {status.label}
+                            {status.label} */}
                           </span>
                         </div>
 
                         <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                          <span>{document.type}</span>
+                          <span>{document.content_type || "Unknown type"}</span>
                           <span>·</span>
-                          <span>{document.size}</span>
+                          <span>{document.file_size_bytes || "Unknown size"}</span>
                           <span>·</span>
-                          <span>{document.pages} pages</span>
-                          <span>·</span>
-                          <span>Uploaded {document.uploadedAt}</span>
+                          <span>Uploaded {document.created_at}</span>
                         </div>
 
                         <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
@@ -266,7 +210,7 @@ export default function DocumentsPage() {
                     </div>
 
                     <div className="flex shrink-0 items-center gap-2 lg:pl-5">
-                      {document.status === "ready" ? (
+                      {document.status === "analyzed" ? (
                         <Link
                           href={`/documents/${document.id}/ask`}
                           className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
@@ -275,7 +219,7 @@ export default function DocumentsPage() {
                           Ask document
                           <ArrowUpRight className="h-3.5 w-3.5" />
                         </Link>
-                      ) : document.status === "processing" ? (
+                      ) : document.status === "pending" ? (
                         <button
                           type="button"
                           disabled
@@ -289,7 +233,7 @@ export default function DocumentsPage() {
                           type="button"
                           onClick={() => {
                             // Replace with your retry-processing service.
-                            alert(`Retry processing: ${document.name}`);
+                            alert(`Retry processing: ${document.filename}`);
                           }}
                           className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-medium transition-colors hover:bg-muted"
                         >
@@ -300,10 +244,10 @@ export default function DocumentsPage() {
 
                       <button
                         type="button"
-                        aria-label={`More actions for ${document.name}`}
+                        aria-label={`More actions for ${document.filename}`}
                         title="More actions"
                         onClick={() =>
-                          alert(`Add document actions for ${document.name}`)
+                          alert(`Add document actions for ${document.filename}`)
                         }
                         className="flex h-10 w-10 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                       >
